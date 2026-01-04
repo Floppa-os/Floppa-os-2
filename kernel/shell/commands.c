@@ -17,10 +17,11 @@ static int parse_args(char *cmd, char **argv) {
     int argc = 0;
     char *p = cmd;
     while (*p) {
-        if (*p != ' ' && *p != '\t') {
+        if (*p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') {
             argv[argc++] = p;
-            while (*p && *p != ' ' && *p != '\t') p++;
-            *p = '\0';
+            while (*p && *p != ' ' && *p != '\t' && 
+                   *p != '\n' && *p != '\r') p++;
+            *p = '\0';  // Завершаем строку
         }
         p++;
     }
