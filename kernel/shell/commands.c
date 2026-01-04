@@ -92,5 +92,29 @@ static struct {
     {"cat",      cmd_cat},
     {"pwd",      cmd_pwd},
     {"date",     cmd_date},
+    {"floppa",   cmd_floppa},
     {NULL,       NULL}
 };
+void cmd_floppa(int argc, char **argv) {
+    // Открываем файл изображения
+    int fd = sys_open("/Floppa.jpg", 0);
+    if (fd < 0) {
+        shell_puts("Error: Floppa.jpg not found!\n");
+        return;
+    }
+
+    // Читаем содержимое файла (изображение)
+    char buffer[4096];  // буфер для чтения
+    ssize_t bytes_read;
+    ssize_t total_read = 0;
+
+    while ((bytes_read = sys_read(fd, buffer, sizeof(buffer))) > 0) {
+        total_read += bytes_read;
+
+        // Здесь нужно обработать бинарные данные JPEG
+        // и отобразить их на экране (VGA-буфер)
+        render_jpeg_to_vga(buffer, bytes_read);
+    }
+
+    sys_close(fd);
+}
