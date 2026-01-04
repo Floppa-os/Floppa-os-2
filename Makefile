@@ -19,3 +19,11 @@ floppa.bin: $(OBJ)
 
 clean:
 	rm -f $(OBJ) floppa.bin
+
+OBJ = boot/bootloader.o kernel/main.o kernel/memory/paging.o \
+      kernel/drivers/vga.o kernel/fs/fat12.o kernel/fs/vfs.o \
+      kernel/task/scheduler.o kernel/task/context.o \
+      lib/string.o lib/stdio.o
+
+kernel/task/context.o: kernel/task/context.s
+	$(AS) $(ASFLAGS) $< -o $@
