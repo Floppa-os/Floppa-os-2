@@ -1,12 +1,23 @@
-size_t strlen(const char *s) {
-    size_t len = 0;
-    while (s[len]) len++;
-    return len;
-}
+char* itoa(int val, char* buf, int base) {
+    // Упрощённая реализация
+    if (val == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return buf;
+    }
 
-void *memcpy(void *dest, const void *src, size_t n) {
-    uint8_t *d = dest;
-    const uint8_t *s = src;
-    for (size_t i = 0; i < n; i++) d[i] = s[i];
-    return dest;
+    int i = 0;
+    while (val > 0) {
+        buf[i++] = '0' + (val % base);
+        val /= base;
+    }
+    buf[i] = '\0';
+
+    // Разворачиваем строку
+    for (int j = 0; j < i / 2; j++) {
+        char t = buf[j];
+        buf[j] = buf[i - j - 1];
+        buf[i - j - 1] = t;
+    }
+    return buf;
 }
