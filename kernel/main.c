@@ -37,6 +37,31 @@ void kernel_main() {
     init_paging();
     init_heap();
     task_init();
+    // **********************************Изображение запуска экрана**************************************
+void draw_boot_screen(const char* bootscreen.bmp) {
+    int fd = sys_open(bootscreen.bmp, 0);
+    if (fd < 0) {
+        vga_write("Error loading bootscreen!\n", 0x0C); // Красный текст
+        return;
+    }
+
+    // Размер экрана 320x200 = 64000 байт (каждый пиксель — 1 байт = индекс палитры)
+    char screen_buffer[64000];
+    ssize_t bytes_read = sys_read(fd, screen_buffer, 64000);
+    sys_close(fd);
+
+    if (bytes_read != 64000) {
+        vga_write("Bootscreen size mismatch!\n", 0x0C);
+        return;
+    }
+
+    // Копируем буфер в VGA-память (A0000 — начало видеопамяти для 320x200)
+    volatile uint8_t* vga_mem = (uint8_t*)0xA0000;
+    memcpy(vga_mem, screen_buffer, 64000);
+
+    // Устанавливаем VGA-режим 0x13 (320x200, 256 цветов)
+    asm volatile("mov ah, 0x00; mov al, 0x13; int 0x10");
+}
 
     // Запускаем консоль в отдельной задаче
     task_create(shell_task);
