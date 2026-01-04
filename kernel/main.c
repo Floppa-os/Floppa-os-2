@@ -72,3 +72,18 @@ void draw_boot_screen(const char* bootscreen.bmp) {
         schedule();
     }
 }
+void kernel_main() {
+    vga_write("Floppa OS booting...\n", 0x07);
+    init_paging();
+    init_heap();
+
+    // Отображаем загрузочный экран
+    draw_boot_screen("/bootscreen.raw"); // или .bmp, если поддерживается
+
+    task_init();
+    task_create(shell_task);
+    enable_interrupts();
+    while (1) {
+        schedule();
+    }
+}
