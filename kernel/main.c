@@ -27,3 +27,23 @@ void task_example() {
         sys_task_yield();  // Добровольно отдаём управление
     }
 }
+
+#include "include/kernel.h"
+#include "include/task.h"
+#include "include/shell.h"
+
+void kernel_main() {
+    vga_write("Floppa OS booting...\n", 0x07);
+    init_paging();
+    init_heap();
+    task_init();
+
+    // Запускаем консоль в отдельной задаче
+    task_create(shell_task);
+
+    enable_interrupts();
+
+    while (1) {
+        schedule();
+    }
+}
