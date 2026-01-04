@@ -2,7 +2,7 @@
 #include "include/task.h"
 
 void kernel_main() {
-    vga_write("Floppa OS booting...\n", 0x07);
+    vga_write("Floppa OS 2 booting...\n", 0x07);
     init_paging();
     init_heap();
     task_init();  // Инициализируем подсистему задач
@@ -38,6 +38,28 @@ void kernel_main() {
     init_heap();
     task_init();
     // **********************************Изображение запуска экрана**************************************
+    bool load_bmp(int fd, char* buffer, int max_size) {
+    // Читаем заголовок BMP (первые 54 байта)
+    char bmp_header[54];
+    if (sys_read(fd, bmp_header, 54) != 54) return false;
+
+    // Извлекаем ширину и высоту (байты 18 и 22)
+    int width = *(int*)&bmp_header[18];
+    int height = *(int*)&bmp_header[22];
+
+    // Вычисляем размер данных (округлённый до 4-байтовых границ)
+    int data_size = (width * 3 + 3) & ~3; // 3 байта на пиксель (RGB)
+    data_size *= height;
+
+    if (data_size > max_size) return false;
+
+    // Читаем пиксельные данные (инвертируем по вертикали)
+    for (int y = height - 1; y >= 0; y--) {
+        sys_read(fd, buffer + y * width * 3, width * 3);
+    }
+    return true;
+}
+
 void draw_boot_screen(const char* bootscreen.bmp) {
     int fd = sys_open(bootscreen.bmp, 0);
     if (fd < 0) {
