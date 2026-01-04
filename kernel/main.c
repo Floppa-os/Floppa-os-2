@@ -10,3 +10,6 @@ void kernel_main() {
         // Основной цикл ядра
     }
 }
+
+void kernel_main() {
+    vga_write
