@@ -65,3 +65,31 @@ void cmd_ls(int argc, char **argv) {
     shell_puts("file1.txt\n");
     shell_puts("kernel.bin\n");
 }
+#include "include/shell.h"
+#include "include/fs.h"
+
+// ... (предыдущие команды: help, reboot, ls)
+
+
+// Новые команды
+void cmd_clear(int argc, char **argv);
+void cmd_echo(int argc, char **argv);
+void cmd_cat(int argc, char **argv);
+void cmd_pwd(int argc, char **argv);
+void cmd_date(int argc, char **argv);
+
+
+static struct {
+    const char *name;
+    void (*func)(int argc, char **argv);
+} commands[] = {
+    {"help",     cmd_help},
+    {"reboot",   cmd_reboot},
+    {"ls",       cmd_ls},
+    {"clear",    cmd_clear},
+    {"echo",     cmd_echo},
+    {"cat",      cmd_cat},
+    {"pwd",      cmd_pwd},
+    {"date",     cmd_date},
+    {NULL,       NULL}
+};
