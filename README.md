@@ -1,25 +1,34 @@
 # Floppa-os
 floppa-os/
 ├── boot/
-│   ├── bootloader.asm      # Загрузчик (x86-64)
-│   └── multiboot.h         # Макросы для совместимости с GRUB
+│   ├── bootloader.asm
+│   └── multiboot.h
 ├── kernel/
-│   ├── main.c             # Точка входа ядра
+│   ├── main.c
 │   ├── memory/
-│   │   ├── paging.c       # Управление страничной памятью
-│   │   └── heap.c         # Куча (malloc/free)
+│   │   ├── paging.c
+│   │   └── heap.c
 │   ├── drivers/
-│   │   ├── vga.c          # Вывод на экран (VGA)
-│   │   └── keyboard.c       # Обработка ввода с клавиатуры
+│   │   ├── vga.c
+│   │   ├── keyboard.c
+│   │   └── disk.c          # Новый: работа с диском
+│   ├── fs/                # Новый каталог: файловая система
+│   │   ├── fat12.c       # Реализация FAT12
+│   │   ├── vfs.c         # Виртуальная ФС (VFS)
+│   │   └── file.c        # Операции с файлами
 │   ├── sys/
-│   │   ├── syscall.c      # Системные вызовы
-│   │   └── process.c      # Управление процессами
+│   │   ├── syscall.c
+│   │   └── process.c
 │   └── include/
-│       ├── kernel.h       # Глобальные определения
-│       ├── memory.h       # Прототипы для memory/
-│       └── drivers.h        # Прототипы для drivers/
+│       ├── kernel.h
+│       ├── memory.h
+│       ├── drivers.h
+│       ├── fs.h          # Новый: заголовки ФС
+│       └── vfs.h         # Новый: заголовки VFS
 ├── lib/
-│   ├── string.c           # strlen, strcpy и т.п.
-│   └── stdio.c            # printf-подобные функции
-├── Makefile               # Сборка проекта
-└── README.md              # Описание проекта
+│   ├── string.c
+│   └── stdio.c
+├── tools/                 # Новый: утилиты для создания образа ФС
+│   └── mkfat12.py
+├── Makefile
+└── README.md
