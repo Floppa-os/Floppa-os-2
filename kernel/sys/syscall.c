@@ -1,15 +1,18 @@
-#include "include/kernel.h"
+#include "include/task.h"
 
-int sys_write(int fd, const void *buf, size_t count) {
-    if (fd == 1) { // stdout
-        vga_write((const char *)buf, 0x07);
-        return count;
-    }
-    return -1;
+int sys_task_create(void (*func)()) {
+    return task_create(func);
 }
 
-// Таблица системных вызовов
-void *syscall_table[] = {
-    [SYS_WRITE] = sys_write,
-    // ... другие вызовы
+void sys_task_yield() {
+    task_yield();
+}
+
+// Таблица системных вызовов (дополняем)
+void* syscall_table[] = {
+    [SYS_WRITE]  = sys_write,
+    [SYS_OPEN]   = sys_open,
+    [SYS_READ]   = sys_read,
+    [SYS_TASK_CREATE] = sys_task_create,
+    [SYS_TASK_YIELD]  = sys_task_yield,
 };
