@@ -1,13 +1,12 @@
-#include "../include/boot.h"
-#include "gdt.h"
+#include "include/kernel.h"
 
-// Основная точка входа ядра
 void kernel_main() {
-    // Инициализация GDT
-    gdt_install();
+    vga_write("Floppa OS booting...\n", 0x07);
+    init_paging();
+    init_heap();
+    enable_interrupts();
 
-    // Выводим сообщение (для отладки)
-    const char *msg = "Hello, Floppa OS!\n";
-    // Для простоты не реализуем вывод, предполагаем,
-    // что есть какая-то функция для вывода.
+    while (1) {
+        // Основной цикл ядра
+    }
 }
