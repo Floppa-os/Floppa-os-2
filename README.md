@@ -227,3 +227,192 @@ void kernel_main() {
 | `date` | Текущая дата/время |
 | `floppa` | выводит шлёпу |
 ---
+### Инструкция по модификации Floppa OS
+
+Этот гайд поможет вам безопасно вносить изменения в систему. **Сохраняйте резервные копии** перед любыми правками!
+
+---
+
+### 1. Подготовка среды разработки
+
+**Что нужно установить:**
+- `i686-elf-gcc` (кросс‑компилятор);
+- `binutils` (для линковки);
+- `qemu` (эмулятор для тестирования);
+- `grub2-mkrescue` (для сборки ISO).
+
+**Команды для Ubuntu/Debian:**
+```bash
+sudo apt install build-essential qemu-system-i386 grub2-common
+```
+
+---
+
+### 2. Структура проекта (ключевые папки)
+
+```
+floppa-os/
+├── kernel/          # Код ядра (C/ASM)
+│   ├── drivers/     # Драйверы (VGA, клавиатура, диск)
+│   └── main.c       # Точка входа ядра
+├── boot/           # Загрузчик и линкер‑скрипты
+│   ├── linker.ld    # Скрипт линковки ядра
+│   └── grub/        # Конфигурация GRUB
+├── include/        # Заголовочные файлы
+├── fs/             # Файловая система
+└── iso/            # Временная папка для ISO
+```
+
+---
+
+### 3. Как изменить ядро
+
+**Шаг 1.** Откройте `kernel/main.c`  
+**Шаг 2.** Внесите правки (например, добавьте вывод текста):
+```c
+void kernel_main() {
+    vga_write("Floppa OS v2.0\n", 0x0F); // Новый текст и цвет
+    // Ваш код здесь
+}
+```
+**Шаг 3.** Пересоберите ядро:
+```bash
+i686-elf-gcc -c kernel/main.c -o bin/kernel.o -ffreestanding -m32
+i686-elf-ld -T boot/linker.ld -o bin/kernel.bin bin/kernel.o
+```
+
+**Важно:**  
+- Не удаляйте `_start` — это точка входа ядра.  
+- Используйте `-ffreestanding` для отключения `libc`.
+
+---
+
+### 4. Как добавить новый драйвер
+
+**Пример: драйвер для мыши**  
+1. Создайте файл `kernel/drivers/mouse.c`.  
+2. Реализуйте функции (например, `mouse_init()`, `mouse_read()`).  
+3. Добавьте `#include "drivers/mouse.h"` в `kernel/main.c`.  
+4. Вызовите `mouse_init()` в `kernel_main()`.  
+5. Пересоберите ядро (см. шаг 3).
+
+---
+
+### 5. Как добавить новую команду в консоль
+
+1. В `kernel/shell/commands.c` добавьте функцию:
+```c
+void cmd_hello(int argc, char **argv) {
+    shell_puts("Hello from Floppa OS!\n");
+}
+```
+2. Обновите массив `commands[]`:
+```c
+{"hello", cmd_hello},
+```
+3. Пересоберите и проверьте в консоли:
+```
+floppa-os $ hello
+```
+
+---
+
+### 6. Как изменить загрузочный экран
+
+
+1. Подготовьте изображение:  
+   - Формат: RAW (320×200, 256 цветов) или BMP.  
+   - Сохраните как `bootscreen.raw` в корне проекта.  
+2. В `kernel/main.c` измените путь в `draw_boot_screen()`:
+```c
+draw_boot_screen("/bootscreen.raw");
+```
+3. Пересоберите ISO (см. раздел 8).
+
+---
+
+### 7. Как обновить файловую систему
+
+
+1. Добавьте файлы в `iso/` (например, `iso/home/user.txt`).  
+2. Пересоздайте ISO (раздел 8).  
+3. Проверьте в QEMU:
+```bash
+qemu-system-i386 -cdrom bin/floppa_os.iso
+```
+
+---
+
+### 8. Как пересобрать ISO‑образ
+
+
+1. Скопируйте ядро в `iso/`:
+```bash
+cp bin/kernel.bin iso/boot/kernel.bin
+```
+2. Создайте ISO:
+```bash
+grub-mkrescue -o bin/floppa_os.iso iso/
+```
+3. Запустите для проверки:
+```bash
+qemu-system-i386 -cdrom bin/floppa_os.iso -m 64M
+```
+
+---
+
+### 9. Отладка и тестирование
+
+
+**Способы проверки:**  
+1. **QEMU с отладкой**:  
+   ```bash
+   qemu-system-i386 -cdrom bin/floppa_os.iso -d int -D qemu.log
+   ```
+   (лог прерываний сохранится в `qemu.log`).  
+
+2. **Вывод в консоль**:  
+   Используйте `vga_write()` для промежуточных сообщений.  
+
+3. **Проверка бинарника**:  
+   ```bash
+   objdump -D bin/kernel.bin | less
+   ```
+
+---
+
+### 10. Частые ошибки и их решение
+
+
+- **«Kernel panic: No shell task»**  
+  → Проверьте `task_create(shell_task)` в `kernel_main()`.
+
+- **«File not found»**  
+  → Убедитесь, что файл есть в `iso/` и путь указан верно.
+- **«Segmentation fault»**  
+  → Добавьте проверки на `NULL` в коде.
+- **«ISO не загружается»**  
+  → Перепроверьте `grub.cfg` и путь к `kernel.bin`.
+- **«Загрузочный диск не виден»**  
+  → Покормите шлёпу.
+
+
+---
+
+### 11. Рекомендации
+
+
+1. **Резервируйте изменения**:  
+   Используйте Git:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   ```
+2. **Тестируйте после каждого шага** — не вносите много правок сразу.  
+3. Читайте документацию:  
+   - [OSDev Wiki](https://wiki.osdev.org)  
+   - [GRUB Manual](https://www.gnu.org/software/grub/)  
+
+---
+
