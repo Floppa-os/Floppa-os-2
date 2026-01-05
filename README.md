@@ -415,4 +415,162 @@ qemu-system-i386 -cdrom bin/floppa_os.iso -m 64M
    - [GRUB Manual](https://www.gnu.org/software/grub/)  
 
 ---
+Ошибка `i686-elf-gcc: команда не найдена` означает, что в вашей системе **не установлен кросс‑компилятор** для целевой платформы `i686-elf` (32‑битная x86 без ОС).
+
+
+Ниже — пошаговая инструкция по установке.
+
+---
+
+### 1. Почему нужен кросс‑компилятор?
+
+
+Ваш хост‑компьютер (например, x86_64 Linux) и целевое ядро ОС (32‑битное i686) имеют разную архитектуру. Поэтому:
+- нельзя использовать обычный `gcc` (он генерирует код для хоста);
+- нужен **кросс‑компилятор** `i686-elf-gcc`, который создаёт 32‑битный код без зависимостей от ОС.
+
+
+---
+
+### 2. Установка кросс‑компилятора (Linux)
+
+
+#### Вариант 1: Через пакетный менеджер (проще)
+
+Для Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install gcc-multilib
+```
+Это установит базовый мультиархитектурный GCC (может подойти для простых ядер).
+
+
+Для более полного набора (binutils + gcc для i686‑elf):
+```bash
+sudo apt install binutils-i686-linux-gnu gcc-i686-linux-gnu
+```
+
+#### Вариант 2: Сборка из исходников (рекомендуется для OSDev)
+
+1. **Создайте рабочую директорию**  
+   ```bash
+   mkdir ~/os-dev && cd ~/os-dev
+   ```
+
+2. **Установите зависимости**  
+   Для Ubuntu/Debian:  
+   ```bash
+   sudo apt install build-essential bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo
+   ```
+   Для Fedora/RHEL:  
+   ```bash
+   sudo dnf install gcc make bison flex gmp-devel mpfr-devel libmpc-devel texinfo
+   ```
+
+3. **Скачайте исходники binutils и GCC**  
+   ```bash
+   wget https://ftp.gnu.org/gnu/binutils/binutils-2.39.tar.gz
+   wget https://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+   ```
+   (версии могут меняться — проверяйте актуальные на gnu.org)
+
+4. **Распакуйте архивы**  
+   ```bash
+   tar -xf binutils-2.39.tar.gz
+   tar -xf gcc-13.2.0.tar.gz
+   ```
+
+5. **Соберите binutils**  
+   ```bash
+   mkdir build-binutils && cd build-binutils
+   ../binutils-2.39/configure --target=i686-elf --prefix=$HOME/os-dev/cross --disable-nls --enable-shared
+   make -j$(nproc)
+   make install
+   ```
+
+6. **Соберите GCC**  
+   ```bash
+   mkdir build-gcc && cd build-gcc
+   ../gcc-13.2.0/configure --target=i686-elf --prefix=$HOME/os-dev/cross --disable-nls --enable-languages=c,c++ --without-headers --with-newlib --disable-multilib --disable-shared --disable-threads --disable-libstdcxx --disable-libssp
+   make all-gcc -j$(nproc)
+   make all-target-libgcc -j$(nproc)
+   make install-gcc -j$(nproc)
+   make install-target-libgcc -j$(nproc)
+   ```
+
+7. **Добавьте путь в `PATH`**  
+   ```bash
+   export PATH=$HOME/os-dev/cross/bin:$PATH
+   ```
+   Чтобы сохранить навсегда, добавьте строку в `~/.bashrc` или `~/.zshrc`.
+
+
+8. **Проверьте установку**  
+   ```bash
+   i686-elf-gcc --version
+   i686-elf-ld --version
+   ```
+
+---
+
+### 3. Альтернативные способы (быстрые)
+
+
+#### Для Ubuntu/Debian (готовые пакеты)
+```bash
+sudo add-apt-repository universe
+sudo apt update
+sudo apt install gcc-i686-elf
+```
+
+
+#### Через Homebrew (macOS)
+```bash
+brew install i686-elf-gcc
+```
+
+#### Готовые бинарники
+Скачайте предварительно собранные инструменты:  
+- [OSDev GCC Binaries](https://wiki.osdev.org/GCC_Cross-Compiler)  
+- Распакуйте и добавьте путь к `bin/` в `PATH`.
+
+
+---
+
+### 4. Проверка работы
+
+
+Создайте тестовый файл `test.c`:
+```c
+void _start() {
+    while (1);
+}
+```
+
+Скомпилируйте:
+```bash
+i686-elf-gcc -c test.c -o test.o -ffreestanding -m32
+i686-elf-ld -T linker.ld -o kernel.bin test.o
+```
+где `linker.ld` — ваш линкер‑скрипт (как в предыдущем ответе).
+
+
+Если ошибок нет — кросс‑компилятор работает.
+
+---
+
+### 5. Типичные ошибки и решения
+
+
+- **Ошибка `command not found` после установки**:  
+  Убедитесь, что путь к `cross/bin` добавлен в `PATH` (проверьте `echo $PATH`).
+
+
+- **GCC не находит `stdio.h`**:  
+  Не подключайте стандартные библиотеки (`-nostdinc`, `-ffreestanding`).
+
+
+- **Ошибки линковки**:  
+  Проверьте, что `linker.ld` указывает правильный адрес загрузки (например, `0x100000`).
+
 
